@@ -6,18 +6,18 @@
       </template>
 
       <UForm :state="form" class="space-y-5">
-        <UFormField label="Nom de l'événement" name="name" required>
+        <UFormField label="Nom de l'événement" required>
           <UInput v-model="form.name" placeholder="Ex: Réunion d'équipe" class="w-full" />
         </UFormField>
 
-        <UFormField label="Description" name="description" required>
+        <UFormField label="Description" required>
           <UTextarea v-model="form.description" placeholder="Ex: Choisissez un créneau pour notre réunion hebdomadaire"
             :rows="3" class="w-full" />
         </UFormField>
 
-        <UFormField label="Choisissez les jours disponibles" name="slots" required>
+        <p class="text-sm mb-2 font-medium">Choisissez les jours disponibles</p>
           <div class="flex flex-col sm:flex-row gap-6">
-            <UCalendar v-model="selectedDates" multiple class="w-full sm:w-1/2" locale="fr" />
+            <UCalendar v-model="selectedDates" :is-date-disabled="isDateDisabled" multiple class="w-full sm:w-1/2" locale="fr" />
             <div v-if="selectedDates.length" class="w-full sm:w-1/2">
               <p class="font-medium mb-3">Jours sélectionnés :</p>
               <div class="flex flex-wrap gap-2">
@@ -28,7 +28,7 @@
               </div>
             </div>
           </div>
-        </UFormField>
+        
 
 
         <UButton @click="submitForm" :disabled="!form.name || selectedDates.length === 0" color="primary">
@@ -58,7 +58,21 @@ const sortedDates = computed(() =>
   [...selectedDates.value].sort((a, b) => new Date(a) - new Date(b))
 )
 
+watch(selectedDates, (newDates) => {
+  if (!Array.isArray(newDates)) {
+    selectedDates.value = [];
+  }
+});
+
 const formatDate = (date) => format(date, 'dd/MM/yyyy', { locale: fr })
+
+const isDateDisabled = (date) => {
+  const today = new Date();
+  const selectedDate = new Date(date);
+  return (
+    selectedDate < today
+  );
+}
 
 function submitForm() {
   const slug = slugify(form.value.name, { lower: true })
@@ -67,8 +81,8 @@ function submitForm() {
     slug,
     slots: selectedDates.value.map(date => ({
       date: format(date, 'yyyy-MM-dd'),
-      reserved: false
-    }))
+    })),
+    createdAt: new Date().toISOString(),
   }
 
   localStorage.setItem(`event-${slug}`, JSON.stringify(eventData))

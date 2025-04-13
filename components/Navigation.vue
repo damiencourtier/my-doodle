@@ -1,5 +1,5 @@
 <template>
-  <UNavigationMenu color="primary" variant="link" :items="items" class="w-full">
+  <UNavigationMenu color="primary" variant="link" :items="items" class="w-full z-40">
     <template v-if="isClient" #components-system>
       <UButton variant="ghost"
         :color="colorMode.preference === 'system' ? 'primary' : 'neutral'" icon="i-lucide-monitor"

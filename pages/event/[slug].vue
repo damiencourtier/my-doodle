@@ -13,8 +13,18 @@
 
       <div v-if="event" class="overflow-x-auto">
 
-        <UAlert color="neutral" variant="subtle" title="Hey!"
-          :description="`${totalSlots} dates disponibles pour cet événement`" icon="i-lucide-terminal" class="mb-8" />
+        <div
+          class="rounded-xl border border-neutral-500 bg-neutral-50 shadow-md mb-8 relative overflow-hidden w-full p-4">
+          <p class="pb-4 text-sm text-center text-gray-700">Cet événement propose {{ totalSlots }} créneaux disponibles.
+          </p>
+          <p v-if="slotWithMostAvailability" class="text-center text-gray-700">
+            <strong>Créneau le plus populaire :</strong>
+            Le <span class="text-blue-600 font-semibold">{{ formatDate(slotWithMostAvailability.date, 'dd MMM')
+            }}</span>
+            avec <span class="text-blue-600 font-semibold">{{ slotWithMostAvailability.count }}</span> disponibilités.
+          </p>
+
+        </div>
 
         <table class="min-w-full border-collapse">
           <thead>
@@ -23,6 +33,7 @@
               <th v-for="slot in paginatedSlots" :key="slot.date" class="text-center text-sm font-semibold pb-4">
                 <div class="text-xs text-gray-500">{{ formatDay(slot.date) }}</div>
                 <div class="text-lg font-bold text-blue-600">{{ formatDate(slot.date, 'dd MMM') }}</div>
+                <div class="text-sm text-gray-500">Disponibilités : {{ availabilityBySlot[slot.date] || 0 }}</div>
               </th>
               <th class="w-10"></th>
             </tr>
@@ -113,6 +124,28 @@ const paginatedSlots = computed(() => {
   const end = start + slotsPerPage.value
   return event.value.slots.slice(start, end)
 })
+
+const availabilityBySlot = computed(() => {
+  if (!event.value?.users || !event.value?.slots) return {}
+
+  return event.value.slots.reduce((acc, slot) => {
+    const count = event.value.users.filter(user =>
+      user.selectedSlots.find(selectedSlot => selectedSlot.date === slot.date && selectedSlot.checked)
+    ).length
+    acc[slot.date] = count
+    return acc
+  }, {})
+})
+
+const slotWithMostAvailability = computed(() => {
+  if (!availabilityBySlot.value || Object.keys(availabilityBySlot.value).length === 0) return null;
+
+  const slots = Object.entries(availabilityBySlot.value);
+  const maxCount = Math.max(...slots.map(([_, count]) => count));
+  const mostAvailableSlots = slots.filter(([_, count]) => count === maxCount);
+
+  return maxCount > 0 ? { date: mostAvailableSlots[0][0], count: maxCount } : null;
+});
 
 watch(
   () => event.value?.users,
